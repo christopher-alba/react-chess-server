@@ -14,7 +14,8 @@
   },
   "scripts": {
     "test": "npm run test",
-    "start": "nodemon ./src/index.ts"
+    "start": "node ./src/index.ts",
+    "dev": "nodemon ./src/index.ts"
   },
   "author": "Christopher Alba",
   "license": "ISC",
