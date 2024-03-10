@@ -19,6 +19,7 @@ export type Position = {
 export type Game = {
   gameID: string;
   players: Player[];
+  allGamesStates: AllGamesStates;
 };
 
 export type MoveDetails = {

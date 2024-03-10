@@ -1,7 +1,220 @@
-import { Team } from "./types/enums";
-import { Game } from "./types/gameTypes";
+import { mapCoordinatesToChessNotation } from "./helper";
+import {
+  CheckType,
+  GameState,
+  Mode,
+  Team,
+  TileColor,
+  Type,
+} from "./types/enums";
+import {
+  AllGameStates,
+  AllGamesStates,
+  Game,
+  StatesOfPieces,
+  Tiles,
+} from "./types/gameTypes";
 
 export let games: Game[] = [];
+
+const initialize2PlayerBoardTiles = (): Tiles => {
+  let tilesArray: Tiles = [];
+  for (let y = 0; y < 8; y++) {
+    let color = y % 2 === 0 ? TileColor.Light : TileColor.Dark;
+    for (let x = 0; x < 8; x++) {
+      tilesArray.push({
+        position: {
+          x: x,
+          y: y,
+        },
+        chessNotationPosition: mapCoordinatesToChessNotation(x, y),
+        isWall: false,
+        color: color,
+      });
+      color = color === TileColor.Light ? TileColor.Dark : TileColor.Light;
+    }
+  }
+  return tilesArray;
+};
+const initialize2PlayerBoardPieces = (): StatesOfPieces => {
+  let pieces: StatesOfPieces = [];
+  // pieces.push({
+  //   position: { x: 0, y: 6 },
+  //   alive: true,
+  //   team: Team.Black,
+  //   id: uuidv4(),
+  //   type: Type.Pawn,
+  //   chessNotationPosition: mapCoordinatesToChessNotation(0, 6),
+  // });
+  // pieces.push({
+  //   position: { x: 5, y: 7},
+  //   alive: true,
+  //   team: Team.White,
+  //   id: uuidv4(),
+  //   type: Type.King,
+  //   chessNotationPosition: mapCoordinatesToChessNotation(5, 7),
+  // });
+  // pieces.push({
+  //   position: { x: 2, y: 0 },
+  //   alive: true,
+  //   team: Team.Black,
+  //   id: uuidv4(),
+  //   type: Type.King,
+  // });
+
+  // black pieces
+  pieces.push({
+    position: { x: 0, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Rook,
+    chessNotationPosition: mapCoordinatesToChessNotation(0, 0),
+  });
+  pieces.push({
+    position: { x: 1, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Knight,
+    chessNotationPosition: mapCoordinatesToChessNotation(1, 0),
+  });
+  pieces.push({
+    position: { x: 2, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Bishop,
+    chessNotationPosition: mapCoordinatesToChessNotation(2, 0),
+  });
+  pieces.push({
+    position: { x: 4, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.King,
+    chessNotationPosition: mapCoordinatesToChessNotation(4, 0),
+  });
+  pieces.push({
+    position: { x: 3, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Queen,
+    chessNotationPosition: mapCoordinatesToChessNotation(3, 0),
+  });
+  pieces.push({
+    position: { x: 5, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Bishop,
+    chessNotationPosition: mapCoordinatesToChessNotation(5, 0),
+  });
+  pieces.push({
+    position: { x: 6, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Knight,
+    chessNotationPosition: mapCoordinatesToChessNotation(6, 0),
+  });
+  pieces.push({
+    position: { x: 7, y: 0 },
+    alive: true,
+    team: Team.Black,
+    id: crypto.randomUUID(),
+    type: Type.Rook,
+    chessNotationPosition: mapCoordinatesToChessNotation(7, 0),
+  });
+  for (let x = 0; x < 8; x++) {
+    pieces.push({
+      position: { x: x, y: 1 },
+      alive: true,
+      team: Team.Black,
+      id: crypto.randomUUID(),
+      type: Type.Pawn,
+      chessNotationPosition: mapCoordinatesToChessNotation(x, 1),
+    });
+  }
+
+  //white pieces
+  pieces.push({
+    position: { x: 0, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Rook,
+    chessNotationPosition: mapCoordinatesToChessNotation(0, 7),
+  });
+  pieces.push({
+    position: { x: 1, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Knight,
+    chessNotationPosition: mapCoordinatesToChessNotation(1, 7),
+  });
+  pieces.push({
+    position: { x: 2, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Bishop,
+    chessNotationPosition: mapCoordinatesToChessNotation(2, 7),
+  });
+  pieces.push({
+    position: { x: 4, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.King,
+    chessNotationPosition: mapCoordinatesToChessNotation(4, 7),
+  });
+  pieces.push({
+    position: { x: 3, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Queen,
+    chessNotationPosition: mapCoordinatesToChessNotation(3, 7),
+  });
+  pieces.push({
+    position: { x: 5, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Bishop,
+    chessNotationPosition: mapCoordinatesToChessNotation(5, 7),
+  });
+  pieces.push({
+    position: { x: 6, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Knight,
+    chessNotationPosition: mapCoordinatesToChessNotation(6, 7),
+  });
+  pieces.push({
+    position: { x: 7, y: 7 },
+    alive: true,
+    team: Team.White,
+    id: crypto.randomUUID(),
+    type: Type.Rook,
+    chessNotationPosition: mapCoordinatesToChessNotation(7, 7),
+  });
+  for (let x = 0; x < 8; x++) {
+    pieces.push({
+      position: { x: x, y: 6 },
+      alive: true,
+      team: Team.White,
+      id: crypto.randomUUID(),
+      type: Type.Pawn,
+      chessNotationPosition: mapCoordinatesToChessNotation(x, 6),
+    });
+  }
+  return pieces;
+};
 
 export const game = (id: string) => games.find((x) => x.gameID === id);
 
@@ -24,21 +237,78 @@ export const addPlayer = ({
   name,
   playerID,
 }: {
-  gameID: string;
+  gameID?: string;
   name: string;
   playerID: string;
 }) => {
   if (!games.find((x) => x.gameID === gameID)) {
     const color = Math.random() <= 0.5 ? Team.White : Team.Black;
     const player = new Player(name, color, playerID, gameID);
-    games.push({
-      gameID: gameID,
+    const randomID = crypto.randomUUID()
+    const state = {
+      gameID: randomID,
       players: [player],
-    });
+      allGamesStates: {
+        gamesStates: [
+          {
+            gameId: randomID,
+            mode: Mode.TwoPlayer,
+            currentTeam: Team.White,
+            moveHistory: [],
+            teamStates: [
+              {
+                teamName: Team.White,
+                alive: true,
+                winner: false,
+                castlingStates: {
+                  KingMoved: false,
+                  KingRookMoved: false,
+                  QueenRookMoved: false,
+                  KingSide: false,
+                  QueenSide: false,
+                },
+                enpassantStates: {
+                  alliedEnpassantPawns: [],
+                  enemyEnpassantPawns: [],
+                },
+              },
+              {
+                teamName: Team.Black,
+                alive: true,
+                winner: false,
+                castlingStates: {
+                  KingMoved: false,
+                  KingRookMoved: false,
+                  QueenRookMoved: false,
+                  KingSide: false,
+                  QueenSide: false,
+                },
+                enpassantStates: {
+                  alliedEnpassantPawns: [],
+                  enemyEnpassantPawns: [],
+                },
+              },
+            ],
+            gameState: GameState.Stopped,
+            checkStatus: {
+              type: CheckType.None,
+              teamInCheck: Team.None,
+              checkingPieces: undefined,
+            },
+            availableTiles: initialize2PlayerBoardTiles(),
+            statesOfPieces: initialize2PlayerBoardPieces(),
+          },
+        ],
+        currentMovesState: [],
+      },
+    };
+    games.push(state);
     return {
       message: "Joined successfully",
       opponent: null,
       player,
+      state: state.allGamesStates,
+      gameID: state.gameID,
     };
   }
 
@@ -49,7 +319,8 @@ export const addPlayer = ({
   const opponent = games.find((x) => x.gameID)?.players[0];
   const color = opponent?.color === Team.White ? Team.Black : Team.White;
   const player = new Player(name, color, playerID, gameID);
-  let players = games.find((x) => x.gameID === gameID)?.players;
+  const game = games.find((x) => x.gameID === gameID);
+  let players = game?.players;
   if (players?.find((x) => x.playerID === player.playerID))
     return {
       error: "Player already exists",
@@ -63,6 +334,7 @@ export const addPlayer = ({
     message: "Added successfully",
     opponent,
     player,
+    state: game.allGamesStates,
   };
 };
 
