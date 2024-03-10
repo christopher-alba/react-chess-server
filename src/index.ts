@@ -8,10 +8,11 @@ import {
   deleteEmptyGameLobby,
   game,
   games,
+  getGames,
   removePlayer,
 } from "./game";
 import { AllGameStates, AllGamesStates } from "./types/gameTypes";
-import { Team } from "./types/enums";
+import { Mode, Team } from "./types/enums";
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +29,10 @@ app.use(cors());
 server.listen(PORT, () => console.log("Server running on port " + PORT));
 
 io.on("connection", (socket) => {
+  socket.on("getLobbies", ({ gameMode }: { gameMode: Mode }, callback) => {
+    socket.join("mainLobby");
+    callback({ lobbies: getGames(gameMode) });
+  });
   socket.on("create", ({ name }: { name: string }, callback) => {
     console.log("Attempting to create game.");
 
@@ -38,17 +43,15 @@ io.on("connection", (socket) => {
     if (error) {
       return callback({ error });
     }
-    socket.join(gameID);
+    socket.join([gameID]);
     console.log(games);
 
     if (!player) return callback("Player is empty");
     callback({ color: player?.color, state: state });
 
-    //send welcome message to player1, and also send the opponent player's data
-    socket.emit("welcome", {
-      message: `Hello ${player?.name}, Welcome to the game`,
-      opponent,
-    });
+    //retrigger client lobby fetching
+    socket.to("mainLobby").emit("lobbyModified");
+    console.log("EMITTED MODIFIED");
 
     // Tell ?2 that player1 has joined the game.
     socket.broadcast.to(player?.gameID).emit("opponentJoin", {
@@ -79,7 +82,7 @@ io.on("connection", (socket) => {
       if (error) {
         return callback({ error });
       }
-      socket.join(gameID);
+      socket.join([gameID, "mainLobby"]);
       console.log(gameID);
       console.log(games);
       callback({ color: player?.color, state: state });
@@ -94,9 +97,9 @@ io.on("connection", (socket) => {
       socket.broadcast
         .to(props.gameID)
         .emit("opponentMove", { allGamesStates: props.allGamesStates });
-
-      games.find((x) => x.gameID === props.gameID).allGamesStates =
-        props.allGamesStates;
+      let state = games.find((x) => x.gameID === props.gameID).allGamesStates;
+      if (!state) return;
+      state = props.allGamesStates;
     }
   );
 
@@ -110,6 +113,8 @@ io.on("connection", (socket) => {
       socket.broadcast.to(player.gameID).emit("opponentLeft");
       console.log(games);
       deleteEmptyGameLobby();
+      socket.join("mainLobby");
+      socket.to("mainLobby").emit("lobbyModified");
     }
   });
 });

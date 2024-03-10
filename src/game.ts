@@ -217,7 +217,8 @@ const initialize2PlayerBoardPieces = (): StatesOfPieces => {
 };
 
 export const game = (id: string) => games.find((x) => x.gameID === id);
-
+export const getGames = (mode: Mode) =>
+  games.filter((x) => x.allGamesStates?.gamesStates?.[0]?.mode === mode);
 export class Player {
   public name: string;
   public color: Team;
@@ -244,7 +245,7 @@ export const addPlayer = ({
   if (!games.find((x) => x.gameID === gameID)) {
     const color = Math.random() <= 0.5 ? Team.White : Team.Black;
     const player = new Player(name, color, playerID, gameID);
-    const randomID = crypto.randomUUID()
+    const randomID = crypto.randomUUID();
     const state = {
       gameID: randomID,
       players: [player],
