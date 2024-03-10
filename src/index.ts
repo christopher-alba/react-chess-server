@@ -97,7 +97,7 @@ io.on("connection", (socket) => {
       socket.broadcast
         .to(props.gameID)
         .emit("opponentMove", { allGamesStates: props.allGamesStates });
-      let state = games.find((x) => x.gameID === props.gameID).allGamesStates;
+      let state = games.find((x) => x.gameID === props.gameID)?.allGamesStates;
       if (!state) return;
       state = props.allGamesStates;
     }
