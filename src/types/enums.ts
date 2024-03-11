@@ -74,3 +74,9 @@ export enum ValidationType {
   Default,
   Enemy,
 }
+
+export enum Visibility {
+  Public = "Public",
+  Auto = "Auto",
+  Private = "Private",
+}

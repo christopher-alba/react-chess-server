@@ -6,6 +6,7 @@ import {
   Team,
   TileColor,
   Type,
+  Visibility,
 } from "./types/enums";
 import {
   AllGameStates,
@@ -237,15 +238,19 @@ export const addPlayer = ({
   gameID,
   name,
   playerID,
+  visibility,
+  password,
 }: {
   gameID?: string;
   name: string;
   playerID: string;
+  visibility?: Visibility;
+  password?: string;
 }) => {
   if (!games.find((x) => x.gameID === gameID)) {
     const color = Math.random() <= 0.5 ? Team.White : Team.Black;
-    const player = new Player(name, color, playerID, gameID);
     const randomID = crypto.randomUUID();
+    const player = new Player(name, color, playerID, randomID);
     const state = {
       gameID: randomID,
       players: [player],
@@ -302,6 +307,8 @@ export const addPlayer = ({
         ],
         currentMovesState: [],
       },
+      visibility: visibility,
+      password: password,
     };
     games.push(state);
     return {
@@ -321,19 +328,32 @@ export const addPlayer = ({
   const color = opponent?.color === Team.White ? Team.Black : Team.White;
   const player = new Player(name, color, playerID, gameID);
   const game = games.find((x) => x.gameID === gameID);
+
+  if (game.password && game.password !== password) {
+    return {
+      error: "Incorrect Password",
+      opponent: undefined,
+      player: undefined,
+    };
+  }
+
   let players = game?.players;
-  if (players?.find((x) => x.playerID === player.playerID))
+
+  if (players?.find((x) => x.playerID === player.playerID)) {
     return {
       error: "Player already exists",
       opponent: undefined,
       player: undefined,
     };
+  }
 
-  players?.push(player);
+  console.log("ALL STATES: ");
+  console.log(game.allGamesStates);
 
   return {
     message: "Added successfully",
     opponent,
+    players,
     player,
     state: game.allGamesStates,
   };
