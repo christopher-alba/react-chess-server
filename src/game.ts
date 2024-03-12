@@ -254,6 +254,7 @@ export const addPlayer = ({
     const state = {
       gameID: randomID,
       players: [player],
+      spectators: [],
       allGamesStates: {
         gamesStates: [
           {
@@ -309,19 +310,20 @@ export const addPlayer = ({
       },
       visibility: visibility,
       password: password,
-    };
+    } as Game;
     games.push(state);
     return {
       message: "Joined successfully",
       opponent: null,
       player,
-      state: state.allGamesStates,
-      gameID: state.gameID,
+      game: state,
     };
   }
 
-  if (!((games.find((x) => x.gameID === gameID)?.gameID.length ?? -1) >= 2)) {
-    return { error: "This game is full" };
+  const playerCount = games.find((game) => game.gameID === gameID)?.players
+    .length;
+  if (playerCount >= 2) {
+    return { error: "This game is full for players (2 Maximum)." };
   }
 
   const opponent = games.find((x) => x.gameID)?.players[0];
@@ -353,9 +355,27 @@ export const addPlayer = ({
   return {
     message: "Added successfully",
     opponent,
-    players,
+    game: game,
     player,
-    state: game.allGamesStates,
+  };
+};
+
+export const addSpectator = (name: string, socketID, gameID, password) => {
+  const player = new Player(name, Team.None, crypto.randomUUID(), gameID);
+  const game = games.find((x) => x.gameID === gameID);
+
+  if (game.password && game.password !== password) {
+    return {
+      error: "Incorrect Password",
+      opponent: undefined,
+      player: undefined,
+    };
+  }
+
+  return {
+    message: "Added Spectator Successfully",
+    game: game,
+    newSpectator: player,
   };
 };
 
@@ -363,7 +383,7 @@ export const removePlayer = (playerID: string) => {
   for (let i = 0; i < games.length; i++) {
     const game = games[i];
     let players = games.find((x) => x.gameID === game.gameID)?.players;
-
+    
     if (!players || players.length === 0) return;
     console.log(playerID);
 

@@ -20,6 +20,7 @@ export type Position = {
 export type Game = {
   gameID: string;
   players: Player[];
+  spectators: Player[];
   allGamesStates: AllGamesStates;
   visibility: Visibility;
   password?: string;

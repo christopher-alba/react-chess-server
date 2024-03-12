@@ -5,6 +5,7 @@ import cors from "cors";
 import {
   Player,
   addPlayer,
+  addSpectator,
   deleteEmptyGameLobby,
   game,
   games,
@@ -45,7 +46,11 @@ io.on("connection", (socket) => {
     ) => {
       console.log("Attempting to create game.");
 
-      const { error, player, state, gameID } = addPlayer({
+      const {
+        error,
+        player,
+        game: gameObject,
+      } = addPlayer({
         name,
         playerID: socket.id,
         visibility,
@@ -54,14 +59,17 @@ io.on("connection", (socket) => {
       if (error) {
         return callback({ error });
       }
-      socket.join([gameID]);
+      socket.join([gameObject.gameID]);
       console.log(games);
 
       if (!player) return callback("Player is empty");
 
       console.log(password);
 
-      callback({ color: player?.color, state: state, password: password });
+      callback({
+        game: gameObject,
+        player: player,
+      });
 
       //retrigger client lobby fetching
       socket.to("mainLobby").emit("lobbyModified");
@@ -73,11 +81,11 @@ io.on("connection", (socket) => {
         opponent: player,
       });
 
-      if ((game(gameID)?.players?.length ?? -1) >= 2) {
-        const white = game(gameID)?.players.find(
+      if ((game(gameObject.gameID)?.players?.length ?? -1) >= 2) {
+        const white = game(gameObject.gameID)?.players.find(
           (player: Player) => player.color === Team.White
         );
-        io.to(gameID).emit("message", {
+        io.to(gameObject.gameID).emit("message", {
           message: `Let's start the game. White (${white?.name}) goes first`,
         });
       }
@@ -98,7 +106,11 @@ io.on("connection", (socket) => {
       console.log("password:" + password);
 
       if (!games.find((game) => game.gameID === gameID)) return;
-      const { error, player, players, opponent, state } = addPlayer({
+      const {
+        error,
+        player,
+        game: gameObject,
+      } = addPlayer({
         name,
         playerID: socket.id,
         gameID,
@@ -109,12 +121,45 @@ io.on("connection", (socket) => {
         return callback({ error });
       }
 
-      players?.push(player);
-      console.log(players);
+      gameObject.players?.push(player);
+      socket.join([gameObject.gameID]);
+      console.log(games);
+      callback({ player: player, game: gameObject });
+      socket.to(gameObject.gameID).emit("opponentJoin", { player: player });
+    }
+  );
+
+  socket.on(
+    "joinAsSpectator",
+    (
+      {
+        name,
+        gameID,
+        password,
+      }: { name: string; gameID: string; password?: string },
+      callback
+    ) => {
+      console.log("Attempting to join game:" + gameID);
+      console.log("password:" + password);
+
+      if (!games.find((game) => game.gameID === gameID)) return;
+      const { error, game, newSpectator } = addSpectator(
+        name,
+        socket.id,
+        gameID,
+        password
+      );
+      if (error) {
+        console.log(error);
+        return callback({ error });
+      }
+
+      game.spectators?.push(newSpectator);
       socket.join([gameID]);
       console.log(gameID);
       console.log(games);
-      callback({ color: player?.color, state: state });
+      callback({ newSpectator: newSpectator, game: game });
+      socket.to(gameID).emit("spectatorJoin", { spectator: newSpectator });
     }
   );
 
