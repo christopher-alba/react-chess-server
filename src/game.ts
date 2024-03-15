@@ -361,7 +361,7 @@ export const addPlayer = ({
 };
 
 export const addSpectator = (name: string, socketID, gameID, password) => {
-  const player = new Player(name, Team.None, crypto.randomUUID(), gameID);
+  const player = new Player(name, Team.None, socketID, gameID);
   const game = games.find((x) => x.gameID === gameID);
 
   if (game.password && game.password !== password) {
@@ -383,20 +383,46 @@ export const removePlayer = (playerID: string) => {
   for (let i = 0; i < games.length; i++) {
     const game = games[i];
     let players = games.find((x) => x.gameID === game.gameID)?.players;
-    
-    if (!players || players.length === 0) return;
+
+    if (
+      !players ||
+      players.length === 0 ||
+      !players?.find((x) => x.playerID === playerID)
+    )
+      continue;
+
     console.log(playerID);
 
-    const index = players?.findIndex((pl) => pl.playerID === playerID);
+    game.players = players?.filter((pl) => pl.playerID !== playerID);
 
-    if (index !== -1) {
-      let res = players.splice(index, 1)[0];
-      return res;
-    }
+    let res = game.players[0];
+    return res;
   }
 };
 
 export const deleteEmptyGameLobby = () => {
-  games = games.filter((x) => x.players.length > 0);
+  games = games.filter((x) => x.players.length > 0 || x.spectators.length > 0);
   console.log(games);
+};
+
+export const removeSpectator = (playerID: string) => {
+  for (let i = 0; i < games.length; i++) {
+    const game = games[i];
+    let spectators = games.find((x) => x.gameID === game.gameID)?.spectators;
+
+    if (
+      !spectators ||
+      spectators.length === 0 ||
+      !spectators.find((x) => x.playerID === playerID)
+    )
+      continue;
+
+    game.spectators = spectators.filter((x) => x.playerID !== playerID);
+    console.log(game);
+    const res = {
+      spectators: game.spectators,
+      players: game.players,
+    };
+    return res;
+  }
 };

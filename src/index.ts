@@ -11,6 +11,7 @@ import {
   games,
   getGames,
   removePlayer,
+  removeSpectator,
 } from "./game";
 import { AllGameStates, AllGamesStates } from "./types/gameTypes";
 import { Mode, Team, Visibility } from "./types/enums";
@@ -180,16 +181,33 @@ io.on("connection", (socket) => {
 
   socket.on("disconnect", () => {
     const player = removePlayer(socket.id);
+    const response = removeSpectator(socket.id);
 
-    if (player) {
-      io.to(player.gameID).emit("message", {
-        message: `${player.name} has left the game.`,
-      });
-      socket.broadcast.to(player.gameID).emit("opponentLeft");
-      console.log(games);
-      deleteEmptyGameLobby();
-      socket.join("mainLobby");
-      socket.to("mainLobby").emit("lobbyModified");
+    if (player || response) {
+      if (player) {
+        console.log("broadcasting player left");
+        socket.broadcast.to(player.gameID).emit("playerLeft", {
+          remainingPlayer: player,
+        });
+      } else if (response) {
+        //if spectators exist use their game id to send message
+        if (response.spectators?.length > 0) {
+          socket.broadcast
+            .to(response.spectators[0].gameID)
+            .emit("spectatorLeft", { spectators: response.spectators });
+        } else if (response.players?.length > 0) {
+          //if spectators dont exist, use player ids to send message
+          io.to(response.players[0].gameID).emit("message", {
+            message: `${response.players[0].name} has left the game.`,
+          });
+          socket.broadcast
+            .to(response.players[0].gameID)
+            .emit("spectatorLeft", { spectators: response.spectators });
+        }
+      }
     }
+    deleteEmptyGameLobby();
+    socket.join("mainLobby");
+    socket.to("mainLobby").emit("lobbyModified");
   });
 });
