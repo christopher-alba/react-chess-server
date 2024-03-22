@@ -15,6 +15,13 @@ import {
 } from "./game";
 import { AllGameStates, AllGamesStates } from "./types/gameTypes";
 import { Mode, Team, Visibility } from "./types/enums";
+import { jwtCheck } from "./auth";
+import { connectToMongoDb } from "./mongodb";
+import matchesRoutes from "./routes/matches";
+
+import dotenv from "dotenv";
+
+dotenv.config();
 
 const app = express();
 const server = http.createServer(app);
@@ -28,6 +35,12 @@ const io = new Server(server, {
 });
 
 app.use(cors());
+app.use(express.json());
+
+app.use("/matches", matchesRoutes);
+
+connectToMongoDb().catch(console.dir);
+
 server.listen(PORT, () => console.log("Server running on port " + PORT));
 
 io.on("connection", (socket) => {
