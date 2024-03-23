@@ -199,7 +199,10 @@ io.on("connection", (socket) => {
     if (playerResponse || response) {
       if (playerResponse) {
         console.log("broadcasting player left");
-        if (playerResponse.type === "SPECTATOR") {
+        if (
+          playerResponse.type === "SPECTATOR" &&
+          playerResponse.player !== undefined
+        ) {
           socket.broadcast.to(playerResponse.player.gameID).emit("playerLeft", {
             remainingPlayer: undefined,
           });
