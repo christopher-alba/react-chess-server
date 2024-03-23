@@ -193,15 +193,21 @@ io.on("connection", (socket) => {
   );
 
   socket.on("disconnect", () => {
-    const player = removePlayer(socket.id);
+    const playerResponse = removePlayer(socket.id);
     const response = removeSpectator(socket.id);
 
-    if (player || response) {
-      if (player) {
+    if (playerResponse || response) {
+      if (playerResponse) {
         console.log("broadcasting player left");
-        socket.broadcast.to(player.gameID).emit("playerLeft", {
-          remainingPlayer: player,
-        });
+        if (playerResponse.type === "SPECTATOR") {
+          socket.broadcast.to(playerResponse.player.gameID).emit("playerLeft", {
+            remainingPlayer: undefined,
+          });
+        } else {
+          socket.broadcast.to(playerResponse.player.gameID).emit("playerLeft", {
+            remainingPlayer: playerResponse.player,
+          });
+        }
       } else if (response) {
         //if spectators exist use their game id to send message
         if (response.spectators?.length > 0) {

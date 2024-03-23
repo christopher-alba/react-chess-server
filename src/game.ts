@@ -395,7 +395,11 @@ export const removePlayer = (playerID: string) => {
 
     game.players = players?.filter((pl) => pl.playerID !== playerID);
 
-    let res = game.players[0];
+    if (game.players.length === 0) {
+      return { player: game.spectators[0], type: "SPECTATOR" };
+    }
+
+    let res = { player: game.players[0], type: "PLAYER" };
     return res;
   }
 };

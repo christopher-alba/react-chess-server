@@ -23,7 +23,7 @@ export const createMatch = async (match) => {
   const matchCollection = getMatchesCollection();
   console.log(match);
   //check if match already exists
-  const query = { auth0UserId: match.auth0UserId, gameId: match.matchId };
+  const query = { auth0UserId: match.auth0UserId, gameId: match.gameId };
   const foundMatch = await matchCollection.findOne(query);
   if (foundMatch) {
     //if match exists, update the existing match
