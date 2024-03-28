@@ -44,192 +44,203 @@ connectToMongoDb().catch(console.dir);
 server.listen(PORT, () => console.log("Server running on port " + PORT));
 
 io.on("connection", (socket) => {
-  socket.on("getLobbies", ({ gameMode }: { gameMode: Mode }, callback) => {
-    socket.join("mainLobby");
-    callback({ lobbies: getGames(gameMode) });
-  });
-  socket.on(
-    "create",
-    (
-      {
-        name,
-        visibility,
-        password,
-      }: { name: string; visibility: Visibility; password: string },
-      callback
-    ) => {
-      console.log("Attempting to create game.");
+  try {
+    socket.on("getLobbies", ({ gameMode }: { gameMode: Mode }, callback) => {
+      socket.join("mainLobby");
+      callback({ lobbies: getGames(gameMode) });
+    });
+    socket.on(
+      "create",
+      (
+        {
+          name,
+          visibility,
+          password,
+        }: { name: string; visibility: Visibility; password: string },
+        callback
+      ) => {
+        console.log("Attempting to create game.");
 
-      const {
-        error,
-        player,
-        game: gameObject,
-      } = addPlayer({
-        name,
-        playerID: socket.id,
-        visibility,
-        password: password,
-      });
-      if (error) {
-        return callback({ error });
-      }
-      socket.join([gameObject.gameID]);
-      console.log(games);
-
-      if (!player) return callback("Player is empty");
-
-      console.log(password);
-
-      callback({
-        game: gameObject,
-        player: player,
-      });
-
-      //retrigger client lobby fetching
-      socket.to("mainLobby").emit("lobbyModified");
-      console.log("EMITTED MODIFIED");
-
-      // Tell ?2 that player1 has joined the game.
-      socket.broadcast.to(player?.gameID).emit("opponentJoin", {
-        message: `${player?.name} has joined the game. `,
-        opponent: player,
-      });
-
-      if ((game(gameObject.gameID)?.players?.length ?? -1) >= 2) {
-        const white = game(gameObject.gameID)?.players.find(
-          (player: Player) => player.color === Team.White
-        );
-        io.to(gameObject.gameID).emit("message", {
-          message: `Let's start the game. White (${white?.name}) goes first`,
+        const {
+          error,
+          player,
+          game: gameObject,
+        } = addPlayer({
+          name,
+          playerID: socket.id,
+          visibility,
+          password: password,
         });
-      }
-    }
-  );
+        if (error) {
+          return callback({ error });
+        }
+        socket.join([gameObject.gameID]);
+        console.log(games);
 
-  socket.on(
-    "join",
-    (
-      {
-        name,
-        gameID,
-        password,
-      }: { name: string; gameID: string; password?: string },
-      callback
-    ) => {
-      console.log("Attempting to join game:" + gameID);
-      console.log("password:" + password);
+        if (!player) return callback("Player is empty");
 
-      if (!games.find((game) => game.gameID === gameID)) return;
-      const {
-        error,
-        player,
-        game: gameObject,
-      } = addPlayer({
-        name,
-        playerID: socket.id,
-        gameID,
-        password,
-      });
-      if (error) {
-        console.log(error);
-        return callback({ error });
-      }
+        console.log(password);
 
-      gameObject.players?.push(player);
-      socket.join([gameObject.gameID]);
-      console.log(games);
-      callback({ player: player, game: gameObject });
-      socket.to(gameObject.gameID).emit("opponentJoin", { player: player });
-    }
-  );
+        callback({
+          game: gameObject,
+          player: player,
+        });
 
-  socket.on(
-    "joinAsSpectator",
-    (
-      {
-        name,
-        gameID,
-        password,
-      }: { name: string; gameID: string; password?: string },
-      callback
-    ) => {
-      console.log("Attempting to join game:" + gameID);
-      console.log("password:" + password);
+        //retrigger client lobby fetching
+        socket.to("mainLobby").emit("lobbyModified");
+        console.log("EMITTED MODIFIED");
 
-      if (!games.find((game) => game.gameID === gameID)) return;
-      const { error, game, newSpectator } = addSpectator(
-        name,
-        socket.id,
-        gameID,
-        password
-      );
-      if (error) {
-        console.log(error);
-        return callback({ error });
-      }
+        // Tell ?2 that player1 has joined the game.
+        socket.broadcast.to(player?.gameID).emit("opponentJoin", {
+          message: `${player?.name} has joined the game. `,
+          opponent: player,
+        });
 
-      game.spectators?.push(newSpectator);
-      socket.join([gameID]);
-      console.log(gameID);
-      console.log(games);
-      callback({ newSpectator: newSpectator, game: game });
-      socket.to(gameID).emit("spectatorJoin", { spectator: newSpectator });
-    }
-  );
-
-  socket.on(
-    "move",
-    (props: { allGamesStates: AllGamesStates; gameID: string }) => {
-      console.log("Someone has moved");
-
-      socket.broadcast
-        .to(props.gameID)
-        .emit("opponentMove", { allGamesStates: props.allGamesStates });
-      let state = games.find((x) => x.gameID === props.gameID);
-      if (!state) return;
-      state.allGamesStates = props.allGamesStates;
-      console.log(state);
-    }
-  );
-
-  socket.on("disconnect", () => {
-    const playerResponse = removePlayer(socket.id);
-    const response = removeSpectator(socket.id);
-
-    if (playerResponse || response) {
-      if (playerResponse) {
-        console.log("broadcasting player left");
-        if (
-          playerResponse.type === "SPECTATOR" &&
-          playerResponse.player !== undefined
-        ) {
-          socket.broadcast.to(playerResponse.player.gameID).emit("playerLeft", {
-            remainingPlayer: undefined,
-          });
-        } else {
-          socket.broadcast.to(playerResponse.player.gameID).emit("playerLeft", {
-            remainingPlayer: playerResponse.player,
+        if ((game(gameObject.gameID)?.players?.length ?? -1) >= 2) {
+          const white = game(gameObject.gameID)?.players.find(
+            (player: Player) => player.color === Team.White
+          );
+          io.to(gameObject.gameID).emit("message", {
+            message: `Let's start the game. White (${white?.name}) goes first`,
           });
         }
-      } else if (response) {
-        //if spectators exist use their game id to send message
-        if (response.spectators?.length > 0) {
-          socket.broadcast
-            .to(response.spectators[0].gameID)
-            .emit("spectatorLeft", { spectators: response.spectators });
-        } else if (response.players?.length > 0) {
-          //if spectators dont exist, use player ids to send message
-          io.to(response.players[0].gameID).emit("message", {
-            message: `${response.players[0].name} has left the game.`,
-          });
-          socket.broadcast
-            .to(response.players[0].gameID)
-            .emit("spectatorLeft", { spectators: response.spectators });
+      }
+    );
+
+    socket.on(
+      "join",
+      (
+        {
+          name,
+          gameID,
+          password,
+        }: { name: string; gameID: string; password?: string },
+        callback
+      ) => {
+        console.log("Attempting to join game:" + gameID);
+        console.log("password:" + password);
+
+        if (!games.find((game) => game.gameID === gameID)) return;
+        const {
+          error,
+          player,
+          game: gameObject,
+        } = addPlayer({
+          name,
+          playerID: socket.id,
+          gameID,
+          password,
+        });
+        if (error) {
+          console.log(error);
+          return callback({ error });
+        }
+
+        gameObject.players?.push(player);
+        socket.join([gameObject.gameID]);
+        console.log(games);
+        callback({ player: player, game: gameObject });
+        socket.to(gameObject.gameID).emit("opponentJoin", { player: player });
+      }
+    );
+
+    socket.on(
+      "joinAsSpectator",
+      (
+        {
+          name,
+          gameID,
+          password,
+        }: { name: string; gameID: string; password?: string },
+        callback
+      ) => {
+        console.log("Attempting to join game:" + gameID);
+        console.log("password:" + password);
+
+        if (!games.find((game) => game.gameID === gameID)) return;
+        const { error, game, newSpectator } = addSpectator(
+          name,
+          socket.id,
+          gameID,
+          password
+        );
+        if (error) {
+          console.log(error);
+          return callback({ error });
+        }
+
+        game.spectators?.push(newSpectator);
+        socket.join([gameID]);
+        console.log(gameID);
+        console.log(games);
+        callback({ newSpectator: newSpectator, game: game });
+        socket.to(gameID).emit("spectatorJoin", { spectator: newSpectator });
+      }
+    );
+
+    socket.on(
+      "move",
+      (props: { allGamesStates: AllGamesStates; gameID: string }) => {
+        console.log("Someone has moved");
+
+        socket.broadcast
+          .to(props.gameID)
+          .emit("opponentMove", { allGamesStates: props.allGamesStates });
+        let state = games.find((x) => x.gameID === props.gameID);
+        if (!state) return;
+        state.allGamesStates = props.allGamesStates;
+        console.log(state);
+      }
+    );
+
+    socket.on("disconnect", () => {
+      const playerResponse = removePlayer(socket.id);
+      const response = removeSpectator(socket.id);
+
+      if (playerResponse || response) {
+        if (playerResponse) {
+          console.log("broadcasting player left");
+          if (
+            playerResponse.type === "SPECTATOR" &&
+            playerResponse.player !== undefined
+          ) {
+            socket.broadcast
+              .to(playerResponse.player.gameID)
+              .emit("playerLeft", {
+                remainingPlayer: undefined,
+              });
+          } else if (
+            playerResponse.player !== undefined &&
+            playerResponse.type === "PLAYER"
+          ) {
+            socket.broadcast
+              .to(playerResponse.player.gameID)
+              .emit("playerLeft", {
+                remainingPlayer: playerResponse.player,
+              });
+          }
+        } else if (response) {
+          //if spectators exist use their game id to send message
+          if (response.spectators?.length > 0) {
+            socket.broadcast
+              .to(response.spectators[0].gameID)
+              .emit("spectatorLeft", { spectators: response.spectators });
+          } else if (response.players?.length > 0) {
+            //if spectators dont exist, use player ids to send message
+            io.to(response.players[0].gameID).emit("message", {
+              message: `${response.players[0].name} has left the game.`,
+            });
+            socket.broadcast
+              .to(response.players[0].gameID)
+              .emit("spectatorLeft", { spectators: response.spectators });
+          }
         }
       }
-    }
-    deleteEmptyGameLobby();
-    socket.join("mainLobby");
-    socket.to("mainLobby").emit("lobbyModified");
-  });
+      deleteEmptyGameLobby();
+      socket.join("mainLobby");
+      socket.to("mainLobby").emit("lobbyModified");
+    });
+  } catch (err) {
+    console.log("Error in server.", err);
+  }
 });

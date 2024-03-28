@@ -12,23 +12,35 @@ const router = express.Router();
 router.get(
   "/:gameId/:auth0UserId",
   /*jwtCheck,*/ async (req, res) => {
-    const match = await getMatch(req.params.gameId, req.params.auth0UserId);
-    res.send(match).status(200);
+    try {
+      const match = await getMatch(req.params.gameId, req.params.auth0UserId);
+      res.send(match).status(200);
+    } catch (err) {
+      res.send(err).status(500);
+    }
   }
 );
 
 router.get("/:auth0UserId", jwtCheck, async (req, res) => {
-  const token = req.headers.authorization;
-  userIdEqualsJwtSub(req.params.auth0UserId, token);
-  const match = await getMatches(req.params.auth0UserId);
-  res.send(match).status(200);
+  try {
+    const token = req.headers.authorization;
+    userIdEqualsJwtSub(req.params.auth0UserId, token);
+    const match = await getMatches(req.params.auth0UserId);
+    res.send(match).status(200);
+  } catch (err) {
+    res.send(err).status(500);
+  }
 });
 
 router.post("/create", jwtCheck, async (req, res) => {
-  const token = req.headers.authorization;
-  userIdEqualsJwtSub(req.body.auth0UserId, token);
-  const result = await createMatch(req.body);
-  res.send(result).status(200);
+  try {
+    const token = req.headers.authorization;
+    userIdEqualsJwtSub(req.body.auth0UserId, token);
+    const result = await createMatch(req.body);
+    res.send(result).status(200);
+  } catch (err) {
+    res.send(err).status(500);
+  }
 });
 
 export default router;
