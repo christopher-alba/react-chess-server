@@ -35,3 +35,8 @@ export const createMatch = async (match) => {
     return result;
   }
 };
+
+export const deleteMatch = async (matchId) => {
+  const matchCollection = getMatchesCollection();
+  await matchCollection.deleteOne({ gameId: matchId });
+};
